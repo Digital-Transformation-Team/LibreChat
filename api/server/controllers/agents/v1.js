@@ -133,6 +133,7 @@ const getAgentHandler = async (req, res) => {
         avatar: agent.avatar,
         author: agent.author,
         projectIds: agent.projectIds,
+        tool_resources: agent.tool_resources,
         isCollaborative: agent.isCollaborative,
         version: agent.version,
       });

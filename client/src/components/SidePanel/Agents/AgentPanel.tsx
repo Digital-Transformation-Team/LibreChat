@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import FileRow from '~/components/Chat/Input/Files/FileRow';
 import React, { useMemo, useCallback, useRef } from 'react';
 import { Button, useToastContext } from '@librechat/client';
 import { useWatch, useForm, FormProvider } from 'react-hook-form';
@@ -15,8 +16,10 @@ import {
   useCreateAgentMutation,
   useUpdateAgentMutation,
   useGetAgentByIdQuery,
+  useGetAgentFiles,
 } from '~/data-provider';
-import { createProviderOption, getDefaultAgentFormValues } from '~/utils';
+import { useFileMapContext } from '~/Providers';
+import { createProviderOption, getDefaultAgentFormValues, processAgentOption } from '~/utils';
 import { useSelectAgent, useLocalize, useAuthContext } from '~/hooks';
 import { useAgentPanelContext } from '~/Providers/AgentPanelContext';
 import AgentPanelSkeleton from './AgentPanelSkeleton';
@@ -43,6 +46,7 @@ export default function AgentPanel() {
   const { onSelect: onSelectAgent } = useSelectAgent();
 
   const modelsQuery = useGetModelsQuery();
+  const fileMap = useFileMapContext();
   const agentQuery = useGetAgentByIdQuery(current_agent_id ?? '', {
     enabled: !!(current_agent_id ?? '') && current_agent_id !== Constants.EPHEMERAL_AGENT_ID,
   });
@@ -54,7 +58,39 @@ export default function AgentPanel() {
 
   const { control, handleSubmit, reset } = methods;
   const agent_id = useWatch({ control, name: 'id' });
+  const agent = useWatch({ control, name: 'agent' });
   const previousVersionRef = useRef<number | undefined>();
+
+  const { data: agentFiles = [] } = useGetAgentFiles(agent_id);
+
+  const mergedFileMap = useMemo(() => {
+    const newFileMap = { ...fileMap };
+    agentFiles.forEach((file) => {
+      if (file.file_id) {
+        newFileMap[file.file_id] = file;
+      }
+    });
+    return newFileMap;
+  }, [fileMap, agentFiles]);
+
+  const knowledge_files = useMemo(() => {
+    if (typeof agent === 'string') {
+      return [];
+    }
+
+    if (agent?.id !== agent_id) {
+      return [];
+    }
+    if (agent.knowledge_files) {
+      return agent.knowledge_files;
+    }
+
+    const _agent = processAgentOption({
+      agent,
+      fileMap: mergedFileMap,
+    });
+    return _agent.knowledge_files ?? [];
+  }, [agent, agent_id, mergedFileMap]);
 
   const allowedProviders = useMemo(
     () => new Set(agentsConfig?.allowedProviders),
@@ -228,7 +264,6 @@ export default function AgentPanel() {
     user?.id,
     user?.role,
   ]);
-
   return (
     <FormProvider {...methods}>
       <form
@@ -289,6 +324,16 @@ export default function AgentPanel() {
                 {localize('com_agents_not_available')}
               </h2>
               <p className="text-token-text-secondary">{localize('com_agents_no_access')}</p>
+              <hr className="mt-3" />
+              <h3 className="text-token-text-primary m-2 text-xl font-semibold">Knowledge files</h3>
+
+              <div className="flex flex-wrap justify-center gap-2">
+                {knowledge_files.map((item, i) => (
+                  <div key={i} className="rounded bg-gray-200 px-3 py-1 text-sm text-gray-800">
+                    {item[1].filename}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
