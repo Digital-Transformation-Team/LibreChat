@@ -5,9 +5,11 @@ import { AuthContext } from '~/hooks/AuthContext';
 const useHasAccess = ({
   permissionType,
   permission,
+  isAdminAccessNeeded,
 }: {
   permissionType: PermissionTypes;
   permission: Permissions;
+  isAdminAccessNeeded?: boolean | null;
 }) => {
   const authContext = useContext(AuthContext);
   const user = authContext?.user;
@@ -25,6 +27,10 @@ const useHasAccess = ({
       permission: Permissions;
     }) => {
       if (!authContext) {
+        return false;
+      }
+
+      if (isAdminAccessNeeded && user?.role != 'ADMIN') {
         return false;
       }
 

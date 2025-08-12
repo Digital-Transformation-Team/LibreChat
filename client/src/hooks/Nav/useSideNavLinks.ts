@@ -48,6 +48,7 @@ export default function useSideNavLinks({
   const hasAccessToMemories = useHasAccess({
     permissionType: PermissionTypes.MEMORIES,
     permission: Permissions.USE,
+    isAdminAccessNeeded: true,
   });
   const hasAccessToReadMemories = useHasAccess({
     permissionType: PermissionTypes.MEMORIES,

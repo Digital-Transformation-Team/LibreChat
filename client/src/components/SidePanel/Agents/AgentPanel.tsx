@@ -10,6 +10,8 @@ import {
   SystemRoles,
   EModelEndpoint,
   isAssistantsEndpoint,
+  PermissionTypes,
+  Permissions,
 } from 'librechat-data-provider';
 import type { AgentForm, StringOption } from '~/common';
 import {
@@ -20,7 +22,7 @@ import {
 } from '~/data-provider';
 import { useFileMapContext } from '~/Providers';
 import { createProviderOption, getDefaultAgentFormValues, processAgentOption } from '~/utils';
-import { useSelectAgent, useLocalize, useAuthContext } from '~/hooks';
+import { useSelectAgent, useLocalize, useAuthContext, useHasAccess } from '~/hooks';
 import { useAgentPanelContext } from '~/Providers/AgentPanelContext';
 import AgentPanelSkeleton from './AgentPanelSkeleton';
 import AdvancedPanel from './Advanced/AdvancedPanel';
@@ -62,6 +64,12 @@ export default function AgentPanel() {
   const previousVersionRef = useRef<number | undefined>();
 
   const { data: agentFiles = [] } = useGetAgentFiles(agent_id);
+
+  const hasAccessToAgents = useHasAccess({
+    permissionType: PermissionTypes.AGENTS,
+    permission: Permissions.USE,
+    isAdminAccessNeeded: true,
+  });
 
   const mergedFileMap = useMemo(() => {
     const newFileMap = { ...fileMap };
@@ -283,7 +291,7 @@ export default function AgentPanel() {
             />
           </div>
           {/* Create + Select Button */}
-          {agent_id && (
+          {agent_id && hasAccessToAgents && (
             <div className="flex w-full gap-2">
               <Button
                 type="button"
