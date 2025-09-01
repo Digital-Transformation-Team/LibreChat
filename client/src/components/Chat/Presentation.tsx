@@ -53,7 +53,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
   }, []);
   const defaultCollapsed = useMemo(() => {
     const collapsedPanels = localStorage.getItem('react-resizable-panels:collapsed');
-    return typeof collapsedPanels === 'string' ? JSON.parse(collapsedPanels) : true;
+    return typeof collapsedPanels === 'string' ? JSON.parse(collapsedPanels) : false;
   }, []);
   const fullCollapse = useMemo(() => localStorage.getItem('fullPanelCollapse') === 'true', []);
 
