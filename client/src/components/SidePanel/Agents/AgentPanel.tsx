@@ -272,6 +272,7 @@ export default function AgentPanel() {
     user?.id,
     user?.role,
   ]);
+
   return (
     <FormProvider {...methods}>
       <form
@@ -348,13 +349,15 @@ export default function AgentPanel() {
         {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.model && (
           <ModelPanel models={models} providers={providers} setActivePanel={setActivePanel} />
         )}
-        {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.builder && (
-          <AgentConfig createMutation={create} />
-        )}
-        {canEditAgent && !agentQuery.isInitialLoading && activePanel === Panel.advanced && (
-          <AdvancedPanel />
-        )}
-        {canEditAgent && !agentQuery.isInitialLoading && (
+        {canEditAgent &&
+          hasAccessToAgents &&
+          !agentQuery.isInitialLoading &&
+          activePanel === Panel.builder && <AgentConfig createMutation={create} />}
+        {canEditAgent &&
+          hasAccessToAgents &&
+          !agentQuery.isInitialLoading &&
+          activePanel === Panel.advanced && <AdvancedPanel />}
+        {canEditAgent && hasAccessToAgents && !agentQuery.isInitialLoading && (
           <AgentFooter
             createMutation={create}
             updateMutation={update}
