@@ -17,12 +17,28 @@ import SearchBar from './SearchBar';
 import NewChat from './NewChat';
 import { cn } from '~/utils';
 import store from '~/store';
+import { URLIcon } from '../Endpoints/URLIcon';
 
 const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
 
 const NAV_WIDTH_DESKTOP = '260px';
 const NAV_WIDTH_MOBILE = '320px';
+
+const classMap = {
+  'menu-item': 'relative flex h-full items-center justify-center overflow-hidden rounded-full',
+  message: 'icon-md',
+  default: 'icon-xl relative flex h-full overflow-hidden rounded-full',
+};
+
+const styleMap = {
+  'menu-item': { width: '20px', height: '20px' },
+  default: { width: '100%', height: '100%' },
+};
+
+const styleImageMap = {
+  default: { width: '100%', height: '100%' },
+};
 
 const NavMask = memo(
   ({ navVisible, toggleNavVisible }: { navVisible: boolean; toggleNavVisible: () => void }) => (
@@ -181,6 +197,24 @@ const Nav = memo(
       }
     }, [search.query, search.isTyping, isLoading, isFetching]);
 
+    const title = 'Agents Dashboard';
+
+    // Проверка текущего пути
+    const isAgentsDashboardActive = window.location.pathname === '/agents-dashboard';
+
+    const handleNavigation = () => {
+      const baseUrl = window.location.origin;
+      const path = '/agents-dashboard';
+
+      // Если уже на нужной странице → ничего не делаем
+      if (window.location.pathname === path) {
+        return;
+      }
+
+      itemToggleNav();
+      window.open(baseUrl + path, '_self'); // '_self' заменяет текущую вкладку
+    };
+
     return (
       <>
         <div
@@ -212,6 +246,61 @@ const Nav = memo(
                         headerButtons={headerButtons}
                         isSmallScreen={isSmallScreen}
                       />
+                      {/* ------- admin stuff ------- */}
+
+                      <div className="relative flex h-10 flex-col pb-2 text-sm text-text-primary">
+                        <div
+                          className={cn(
+                            'group relative flex h-12 w-full items-center rounded-lg transition-colors duration-200 md:h-9',
+                            isAgentsDashboardActive
+                              ? 'bg-surface-active-alt'
+                              : 'hover:bg-surface-active-alt',
+                          )}
+                          onClick={(_) => {
+                            handleNavigation();
+                          }}
+                        >
+                          <div
+                            className={cn(
+                              'flex grow items-center gap-2 overflow-hidden rounded-lg px-2',
+                              isAgentsDashboardActive ? 'bg-surface-active-alt' : '',
+                            )}
+                            title={title}
+                            aria-current={isAgentsDashboardActive ? 'page' : undefined}
+                            style={{ width: '100%' }}
+                          >
+                            {/* change to icon */}
+                            <URLIcon
+                              iconURL={'https://google.com'}
+                              altName={'Agents dashboard'}
+                              className={classMap['menu-item']}
+                              containerStyle={styleMap['menu-item']}
+                              imageStyle={styleImageMap.default}
+                            />
+                            <div
+                              className="relative flex-1 grow overflow-hidden whitespace-nowrap"
+                              style={{ textOverflow: 'clip' }}
+                              role="button"
+                              aria-label={
+                                isSmallScreen ? undefined : title || localize('com_ui_untitled')
+                              }
+                            >
+                              {title || localize('com_ui_untitled')}
+                            </div>
+                            <div
+                              className={cn(
+                                'absolute bottom-0 right-0 top-0 w-20 rounded-r-lg bg-gradient-to-l',
+                                isAgentsDashboardActive
+                                  ? 'from-surface-active-alt'
+                                  : 'from-surface-primary-alt from-0% to-transparent group-hover:from-surface-active-alt group-hover:from-40%',
+                              )}
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {/* ------- admin stuff ------- */}
+                      <hr className="mb-3" />
                       <Conversations
                         conversations={conversations}
                         moveToTop={moveToTop}
