@@ -489,6 +489,7 @@ const getListAgents = async (searchParameter) => {
       projectIds: 1,
       description: 1,
       isCollaborative: 1,
+      model: 1,
     }).lean()
   ).map((agent) => {
     if (agent.author?.toString() !== author) {
@@ -503,7 +504,6 @@ const getListAgents = async (searchParameter) => {
   const hasMore = agents.length > 0;
   const firstId = agents.length > 0 ? agents[0].id : null;
   const lastId = agents.length > 0 ? agents[agents.length - 1].id : null;
-
   return {
     data: agents,
     has_more: hasMore,

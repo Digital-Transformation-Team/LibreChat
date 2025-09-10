@@ -26,7 +26,7 @@ export default function AgentsDashboard() {
             <span className="text-sm text-gray-500 dark:text-gray-400">Total Uses</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-4xl font-bold text-green-600 dark:text-green-300">0 %</span>
+            <span className="text-4xl font-bold text-green-600 dark:text-green-300">0%</span>
             <span className="text-sm text-gray-500 dark:text-gray-400">Avg. Success Rate</span>
           </div>
           <div className="flex flex-col items-center">

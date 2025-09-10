@@ -212,6 +212,12 @@ const Nav = memo(
       window.open(baseUrl + path, '_self');
     };
 
+    const hasAccessToAgents = useHasAccess({
+      permissionType: PermissionTypes.AGENTS,
+      permission: Permissions.USE,
+      isAdminAccessNeeded: true,
+    });
+
     return (
       <>
         <div
@@ -244,60 +250,62 @@ const Nav = memo(
                         isSmallScreen={isSmallScreen}
                       />
                       {/* ------- admin stuff ------- */}
-
-                      <div className="relative flex h-10 flex-col pb-2 text-sm text-text-primary">
-                        <div
-                          className={cn(
-                            'group relative flex h-12 w-full items-center rounded-lg transition-colors duration-200 md:h-9',
-                            isAgentsDashboardActive
-                              ? 'bg-surface-active-alt'
-                              : 'hover:bg-surface-active-alt',
-                          )}
-                          onClick={(_) => {
-                            handleNavigation();
-                          }}
-                        >
-                          <div
-                            className={cn(
-                              'flex grow items-center gap-2 overflow-hidden rounded-lg px-2',
-                              isAgentsDashboardActive ? 'bg-surface-active-alt' : '',
-                            )}
-                            title={title}
-                            aria-current={isAgentsDashboardActive ? 'page' : undefined}
-                            style={{ width: '100%' }}
-                          >
-                            {/* change to icon */}
-                            <URLIcon
-                              iconURL={'https://google.com'}
-                              altName={'Agents dashboard'}
-                              className={classMap['menu-item']}
-                              containerStyle={styleMap['menu-item']}
-                              imageStyle={styleImageMap.default}
-                            />
-                            <div
-                              className="relative flex-1 grow overflow-hidden whitespace-nowrap"
-                              style={{ textOverflow: 'clip' }}
-                              role="button"
-                              aria-label={
-                                isSmallScreen ? undefined : title || localize('com_ui_untitled')
-                              }
-                            >
-                              {title || localize('com_ui_untitled')}
-                            </div>
+                      {hasAccessToAgents && (
+                        <>
+                          <div className="relative flex h-10 flex-col pb-2 text-sm text-text-primary">
                             <div
                               className={cn(
-                                'absolute bottom-0 right-0 top-0 w-20 rounded-r-lg bg-gradient-to-l',
+                                'group relative flex h-12 w-full items-center rounded-lg transition-colors duration-200 md:h-9',
                                 isAgentsDashboardActive
-                                  ? 'from-surface-active-alt'
-                                  : 'from-surface-primary-alt from-0% to-transparent group-hover:from-surface-active-alt group-hover:from-40%',
+                                  ? 'bg-surface-active-alt'
+                                  : 'hover:bg-surface-active-alt',
                               )}
-                              aria-hidden="true"
-                            />
+                              onClick={(_) => {
+                                handleNavigation();
+                              }}
+                            >
+                              <div
+                                className={cn(
+                                  'flex grow items-center gap-2 overflow-hidden rounded-lg px-2',
+                                  isAgentsDashboardActive ? 'bg-surface-active-alt' : '',
+                                )}
+                                title={title}
+                                aria-current={isAgentsDashboardActive ? 'page' : undefined}
+                                style={{ width: '100%' }}
+                              >
+                                <URLIcon
+                                  iconURL={'https://google.com'}
+                                  altName={'Agents dashboard'}
+                                  className={classMap['menu-item']}
+                                  containerStyle={styleMap['menu-item']}
+                                  imageStyle={styleImageMap.default}
+                                />
+                                <div
+                                  className="relative flex-1 grow overflow-hidden whitespace-nowrap"
+                                  style={{ textOverflow: 'clip' }}
+                                  role="button"
+                                  aria-label={
+                                    isSmallScreen ? undefined : title || localize('com_ui_untitled')
+                                  }
+                                >
+                                  {title || localize('com_ui_untitled')}
+                                </div>
+                                <div
+                                  className={cn(
+                                    'absolute bottom-0 right-0 top-0 w-20 rounded-r-lg bg-gradient-to-l',
+                                    isAgentsDashboardActive
+                                      ? 'from-surface-active-alt'
+                                      : 'from-surface-primary-alt from-0% to-transparent group-hover:from-surface-active-alt group-hover:from-40%',
+                                  )}
+                                  aria-hidden="true"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                          <hr className="mb-3" />
+                        </>
+                      )}
                       {/* ------- admin stuff ------- */}
-                      <hr className="mb-3" />
                       <Conversations
                         conversations={conversations}
                         moveToTop={moveToTop}
