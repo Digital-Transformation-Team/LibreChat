@@ -199,20 +199,17 @@ const Nav = memo(
 
     const title = 'Agents Dashboard';
 
-    // Проверка текущего пути
-    const isAgentsDashboardActive = window.location.pathname === '/agents-dashboard';
-
+    const isAgentsDashboardActive = window.location.pathname === '/agents/dashboards';
     const handleNavigation = () => {
       const baseUrl = window.location.origin;
-      const path = '/agents-dashboard';
+      const path = '/agents/dashboards';
 
-      // Если уже на нужной странице → ничего не делаем
       if (window.location.pathname === path) {
         return;
       }
 
       itemToggleNav();
-      window.open(baseUrl + path, '_self'); // '_self' заменяет текущую вкладку
+      window.open(baseUrl + path, '_self');
     };
 
     return (
