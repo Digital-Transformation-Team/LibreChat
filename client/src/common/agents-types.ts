@@ -30,4 +30,6 @@ export type AgentForm = {
   agent_ids?: string[];
   [AgentCapabilities.artifacts]?: ArtifactModes | string;
   recursion_limit?: number;
+  conversation_starters?: string[];
+  isCollaborative?: boolean;
 } & TAgentCapabilities;

@@ -1,24 +1,10 @@
 import React, { useState } from 'react';
-import { useGetStartupConfig, useListAgentsQuery } from '~/data-provider';
+import { useGetStartupConfig, useListAgentsQuery, useUpdateAgentMutation } from '~/data-provider';
 import { processAgentOption } from '~/utils';
+import { AgentCreationModal } from '~/components/Agents';
+import { AgentEditModal } from '~/components/Agents';
 
-function AgentModal({ open, onClose, agent }: { open: boolean; onClose: () => void; agent: any }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="relative w-full max-w-md rounded-lg bg-white p-8 shadow-lg dark:bg-gray-800">
-        <button
-          className="absolute right-4 top-4 text-2xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          ×
-        </button>
-        {/* form here */}
-      </div>
-    </div>
-  );
-}
+// Removed - using AgentEditModal instead
 
 function getAvatarUrl(avatar?: { filepath?: string; source?: string }) {
   if (!avatar?.filepath) return undefined;
@@ -28,7 +14,7 @@ function getAvatarUrl(avatar?: { filepath?: string; source?: string }) {
 
 export default function AgentsDashboard() {
   const { data: startupConfig } = useGetStartupConfig();
-  const { data: agents = null } = useListAgentsQuery(undefined, {
+  const { data: agents = null, refetch } = useListAgentsQuery(undefined, {
     select: (res) =>
       res.data.map((agent) =>
         processAgentOption({
@@ -43,6 +29,7 @@ export default function AgentsDashboard() {
 
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const handleOpenModal = (agent: any) => {
     setSelectedAgent(agent);
@@ -52,6 +39,19 @@ export default function AgentsDashboard() {
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedAgent(null);
+  };
+
+  const handleOpenCreateModal = () => {
+    setCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setCreateModalOpen(false);
+  };
+
+  const handleCreateSuccess = () => {
+    // Refresh the agents list
+    refetch();
   };
 
   return (
@@ -74,9 +74,21 @@ export default function AgentsDashboard() {
           </div>
         </div>
 
-        <h2 className="mb-6 text-2xl font-bold text-gray-700 dark:text-gray-200">
-          Agents Dashboard
-        </h2>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-700 dark:text-gray-200">
+            Agents Dashboard
+          </h2>
+        </div>
+
+        {/* Create Agent Button - positioned after statistics */}
+        <div className="flex justify-end mb-6">
+          <button
+            onClick={handleOpenCreateModal}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium shadow-sm"
+          >
+            + Create Agent
+          </button>
+        </div>
 
         {/* grid */}
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
@@ -114,7 +126,17 @@ export default function AgentsDashboard() {
           ))}
         </div>
 
-        <AgentModal open={modalOpen} onClose={handleCloseModal} agent={selectedAgent} />
+        <AgentEditModal 
+          open={modalOpen} 
+          onClose={handleCloseModal} 
+          agent={selectedAgent}
+          onSuccess={handleCreateSuccess}
+        />
+        <AgentCreationModal 
+          open={createModalOpen} 
+          onClose={handleCloseCreateModal} 
+          onSuccess={handleCreateSuccess}
+        />
       </div>
     </div>
   );

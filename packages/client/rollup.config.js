@@ -71,6 +71,7 @@ export default {
     ...Object.keys(pkg.peerDependencies || {}),
     'react/jsx-runtime',
     'react/jsx-dev-runtime',
+    'lucide-react',
   ],
   preserveSymlinks: true,
   plugins,

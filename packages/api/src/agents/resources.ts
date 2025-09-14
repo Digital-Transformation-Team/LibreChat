@@ -209,7 +209,7 @@ export const primeResources = async ({
         },
         {},
         {},
-        { userId: req.user?.id, agentId },
+        { userId: (req.user as { id?: string })?.id, agentId },
       );
 
       for (const file of context) {
