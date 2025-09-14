@@ -6,8 +6,8 @@ import { useLocalize } from '~/hooks';
 import { getDefaultAgentFormValues, createProviderOption } from '~/utils';
 import type { AgentForm, StringOption, IconComponentTypes } from '~/common';
 import { cn, removeFocusOutlines, defaultTextProps, getEndpointField, getIconKey } from '~/utils';
-import { EModelEndpoint, isAssistantsEndpoint } from 'librechat-data-provider';
-import { useGetStartupConfig, useGetEndpointsQuery } from '~/data-provider';
+import { EModelEndpoint, isAssistantsEndpoint, EToolResources, mergeFileConfig, fileConfig as defaultFileConfig } from 'librechat-data-provider';
+import { useGetStartupConfig, useGetEndpointsQuery, useGetFileConfig } from '~/data-provider';
 import { icons } from '~/hooks/Endpoint/Icons';
 import AgentAvatar from '~/components/SidePanel/Agents/AgentAvatar';
 import Instructions from '~/components/SidePanel/Agents/Instructions';
@@ -17,7 +17,11 @@ import FileSearch from '~/components/SidePanel/Agents/FileSearch';
 import Artifacts from '~/components/SidePanel/Agents/Artifacts';
 import CodeForm from '~/components/SidePanel/Agents/Code/Form';
 import useAgentCapabilities from '~/hooks/Agents/useAgentCapabilities';
-import { useFileMapContext } from '~/Providers';
+import { useFileMapContext, useChatContext } from '~/Providers';
+import { useFileHandling, useLazyEffect } from '~/hooks';
+import FileRow from '~/components/Chat/Input/Files/FileRow';
+import { AttachmentIcon } from '@librechat/client';
+import type { ExtendedFile } from '~/common';
 
 const labelClass = 'mb-2 text-token-text-primary block font-medium';
 const inputClass = cn(
@@ -36,10 +40,23 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
   const localize = useLocalize();
   const { showToast } = useToastContext();
   const fileMap = useFileMapContext();
+  const { setFilesLoading } = useChatContext();
+  
+  // Mock setFilesLoading function for FileRow compatibility
+  const mockSetFilesLoading = (loading: boolean) => {
+    // Simple mock function - we don't need complex loading states in modals
+    console.log('File loading state:', loading);
+  };
   const [showToolDialog, setShowToolDialog] = useState(false);
+  const [contextFiles, setContextFiles] = useState<Map<string, ExtendedFile>>(new Map());
+  const [knowledgeFiles, setKnowledgeFiles] = useState<Map<string, ExtendedFile>>(new Map());
+  const [codeFiles, setCodeFiles] = useState<Map<string, ExtendedFile>>(new Map());
 
   const { data: startupConfig } = useGetStartupConfig();
   const { data: endpointsConfig } = useGetEndpointsQuery();
+  const { data: fileConfig = defaultFileConfig } = useGetFileConfig({
+    select: (data) => mergeFileConfig(data),
+  });
   const agentsConfig = null; // We'll handle this differently for now
   const allTools = {}; // We'll handle tools differently for now
 
@@ -57,6 +74,64 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
   const tools = useWatch({ control, name: 'tools' });
   const agent_id = useWatch({ control, name: 'id' });
 
+  // Simple file upload handlers
+  const handleContextFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      files.forEach((file) => {
+        const fileId = `context_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const extendedFile: ExtendedFile = {
+          file_id: fileId,
+          file: file,
+          filepath: file.name,
+          type: file.type,
+          size: file.size,
+          progress: 1,
+        };
+        setContextFiles(prev => new Map(prev).set(fileId, extendedFile));
+      });
+      event.target.value = '';
+    }
+  };
+
+  const handleKnowledgeFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      files.forEach((file) => {
+        const fileId = `knowledge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const extendedFile: ExtendedFile = {
+          file_id: fileId,
+          file: file,
+          filepath: file.name,
+          type: file.type,
+          size: file.size,
+          progress: 1,
+        };
+        setKnowledgeFiles(prev => new Map(prev).set(fileId, extendedFile));
+      });
+      event.target.value = '';
+    }
+  };
+
+  const handleCodeFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      files.forEach((file) => {
+        const fileId = `code_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const extendedFile: ExtendedFile = {
+          file_id: fileId,
+          file: file,
+          filepath: file.name,
+          type: file.type,
+          size: file.size,
+          progress: 1,
+        };
+        setCodeFiles(prev => new Map(prev).set(fileId, extendedFile));
+      });
+      event.target.value = '';
+    }
+  };
+
   const {
     ocrEnabled,
     codeEnabled,
@@ -66,6 +141,9 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
     webSearchEnabled,
     fileSearchEnabled,
   } = useAgentCapabilities(undefined);
+
+  // Force enable file capabilities for modal
+  const showFileUploads = true;
 
   const allowedProviders = useMemo(
     () => new Set<string>(),
@@ -102,7 +180,7 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
         if (data.web_search === true) {
           tools.push('web_search');
         }
-
+        
         const {
           name,
           artifacts,
@@ -144,8 +222,8 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
           end_after_tools,
           hide_sequential_outputs,
           recursion_limit,
-          conversation_starters,
-          isCollaborative,
+          // conversation_starters, // Temporarily disabled until backend supports it
+          // isCollaborative, // Temporarily disabled until backend supports it
         });
         
         showToast({
@@ -204,7 +282,7 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
       <div className="relative w-full max-w-6xl max-h-[90vh] rounded-lg bg-white shadow-lg dark:bg-gray-800 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -308,14 +386,14 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                           </option>
                         ))}
                       </select>
-                    </div>
+                </div>
 
                     {/* Model Selection */}
                     {providerValue && (
-                      <div>
+                <div>
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           Model
-                        </label>
+                  </label>
                         <button
                           type="button"
                           className="btn btn-neutral border-token-border-light relative h-10 w-full rounded-lg font-medium"
@@ -338,21 +416,21 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                             <span>{model || localize('com_ui_select_model')}</span>
                           </div>
                         </button>
-                        <Controller
-                          name="model"
-                          control={control}
-                          rules={{ required: true }}
-                          render={({ field }) => (
-                            <input
-                              {...field}
-                              value={field.value ?? ''}
+                  <Controller
+                    name="model"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <input
+                        {...field}
+                        value={field.value ?? ''}
                               className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
                               placeholder="Enter model name (e.g., gpt-4, claude-3)"
-                              aria-label="Model name"
-                            />
-                          )}
-                        />
-                      </div>
+                        aria-label="Model name"
+                      />
+                    )}
+                  />
+                </div>
                     )}
                   </div>
                 </div>
@@ -379,6 +457,101 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                     {fileSearchEnabled && <FileSearch agent_id={agent_id} files={[]} />}
                   </div>
                 )}
+
+                {/* File Upload Sections */}
+                <div className="mb-4">
+                  <label className={labelClass}>
+                    File Management
+                  </label>
+                    <div className="space-y-4">
+                      {/* OCR Files */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="text-sm font-medium mb-2">OCR Files (Context)</h4>
+                        <FileRow
+                          files={contextFiles}
+                          setFiles={setContextFiles}
+                          setFilesLoading={mockSetFilesLoading}
+                          agent_id={agent_id}
+                          tool_resource={EToolResources.ocr}
+                          Wrapper={({ children }) => <div className="flex flex-wrap gap-2">{children}</div>}
+                        />
+                        <button
+                          type="button"
+                          className="mt-2 btn btn-neutral border-token-border-light relative h-9 w-full rounded-lg font-medium"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleContextFileChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
+                            input.click();
+                          }}
+                        >
+                          <div className="flex w-full items-center justify-center gap-1">
+                            <AttachmentIcon className="text-token-text-primary h-4 w-4" />
+                            Upload OCR Files
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* File Search Files */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="text-sm font-medium mb-2">Knowledge Files (Search)</h4>
+                        <FileRow
+                          files={knowledgeFiles}
+                          setFiles={setKnowledgeFiles}
+                          setFilesLoading={mockSetFilesLoading}
+                          agent_id={agent_id}
+                          tool_resource={EToolResources.file_search}
+                          Wrapper={({ children }) => <div className="flex flex-wrap gap-2">{children}</div>}
+                        />
+                        <button
+                          type="button"
+                          className="mt-2 btn btn-neutral border-token-border-light relative h-9 w-full rounded-lg font-medium"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleKnowledgeFileChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
+                            input.click();
+                          }}
+                        >
+                          <div className="flex w-full items-center justify-center gap-1">
+                            <AttachmentIcon className="text-token-text-primary h-4 w-4" />
+                            Upload Knowledge Files
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* Code Files */}
+                      <div className="border rounded-lg p-4">
+                        <h4 className="text-sm font-medium mb-2">Code Files</h4>
+                        <FileRow
+                          files={codeFiles}
+                          setFiles={setCodeFiles}
+                          setFilesLoading={mockSetFilesLoading}
+                          agent_id={agent_id}
+                          tool_resource={EToolResources.execute_code}
+                          Wrapper={({ children }) => <div className="flex flex-wrap gap-2">{children}</div>}
+                        />
+                        <button
+                          type="button"
+                          className="mt-2 btn btn-neutral border-token-border-light relative h-9 w-full rounded-lg font-medium"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.multiple = true;
+                            input.onchange = (e) => handleCodeFileChange(e as unknown as React.ChangeEvent<HTMLInputElement>);
+                            input.click();
+                          }}
+                        >
+                          <div className="flex w-full items-center justify-center gap-1">
+                            <AttachmentIcon className="text-token-text-primary h-4 w-4" />
+                            Upload Code Files
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
                 {/* Tools */}
                 {toolsEnabled && (
@@ -429,13 +602,13 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                     render={({ field }) => (
                       <div className="space-y-2">
                         <textarea
-                          {...field}
+                        {...field}
                           value={Array.isArray(field.value) ? field.value.join('\n') : ''}
                           onChange={(e) => {
                             const starters = e.target.value.split('\n').filter(s => s.trim());
                             field.onChange(starters);
                           }}
-                          className={inputClass}
+                        className={inputClass}
                           rows={3}
                           placeholder="Enter conversation starters, one per line"
                           aria-label="Conversation starters"
@@ -455,21 +628,21 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                   </label>
                   <div className="space-y-3">
                     {/* Recursion Limit */}
-                    <div>
+                <div>
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Recursion Limit
-                      </label>
-                      <Controller
+                  </label>
+                  <Controller
                         name="recursion_limit"
-                        control={control}
-                        render={({ field }) => (
-                          <input
-                            {...field}
+                    control={control}
+                    render={({ field }) => (
+                      <input
+                        {...field}
                             value={field.value ?? ''}
                             type="number"
                             min="1"
                             max="10"
-                            className={inputClass}
+                        className={inputClass}
                             placeholder="5"
                             aria-label="Recursion limit"
                           />
@@ -524,14 +697,16 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                         control={control}
                         render={({ field }) => (
                           <input
-                            {...field}
                             type="checkbox"
                             checked={field.value ?? false}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
                             className="rounded"
                             aria-label="Collaborative mode"
-                          />
-                        )}
                       />
+                    )}
+                  />
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Collaborative mode
                       </label>
@@ -563,8 +738,8 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
 
         {/* Tool Selection Dialog - Simplified for now */}
         {showToolDialog && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
               <h3 className="text-lg font-semibold mb-4">Select Tools</h3>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Available Tools:</label>
