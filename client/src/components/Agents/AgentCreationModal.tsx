@@ -5,6 +5,7 @@ import { useCreateAgentMutation } from '~/data-provider/Agents/mutations';
 import { useLocalize } from '~/hooks';
 import { getDefaultAgentFormValues, createProviderOption } from '~/utils';
 import type { AgentForm, StringOption, IconComponentTypes } from '~/common';
+import { getAgentDefaults, shouldUsePredefinedValues } from '~/config/agentDefaults';
 import { cn, removeFocusOutlines, defaultTextProps, getEndpointField, getIconKey } from '~/utils';
 import { EModelEndpoint, isAssistantsEndpoint, EToolResources, mergeFileConfig, fileConfig as defaultFileConfig } from 'librechat-data-provider';
 import { useGetStartupConfig, useGetEndpointsQuery, useGetFileConfig } from '~/data-provider';
@@ -43,10 +44,11 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
   const { setFilesLoading } = useChatContext();
   
   // Mock setFilesLoading function for FileRow compatibility
-  const mockSetFilesLoading = (loading: boolean) => {
+  const mockSetFilesLoading = React.useCallback((loading: boolean | ((prev: boolean) => boolean)) => {
     // Simple mock function - we don't need complex loading states in modals
-    console.log('File loading state:', loading);
-  };
+    const loadingValue = typeof loading === 'function' ? loading(false) : loading;
+    console.log('File loading state:', loadingValue);
+  }, []);
   const [showToolDialog, setShowToolDialog] = useState(false);
   const [contextFiles, setContextFiles] = useState<Map<string, ExtendedFile>>(new Map());
   const [knowledgeFiles, setKnowledgeFiles] = useState<Map<string, ExtendedFile>>(new Map());
@@ -60,11 +62,23 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
   const agentsConfig = null; // We'll handle this differently for now
   const allTools = {}; // We'll handle tools differently for now
 
+  // Get predefined values configuration
+  const agentDefaults = getAgentDefaults();
+  const usePredefined = shouldUsePredefinedValues();
+
   const methods = useForm<AgentForm>({
     defaultValues: getDefaultAgentFormValues(),
   });
 
   const { control, handleSubmit, reset, setValue } = methods;
+
+  // Set predefined values if enabled
+  React.useEffect(() => {
+    if (usePredefined) {
+      setValue('provider', createProviderOption(agentDefaults.provider));
+      setValue('model', agentDefaults.model);
+    }
+  }, [usePredefined, agentDefaults.provider, agentDefaults.model, setValue]);
   
   const createMutation = useCreateAgentMutation();
 
@@ -201,7 +215,8 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
         const providerValue =
           (typeof _provider === 'string' ? _provider : (_provider as StringOption)?.value) ?? '';
 
-        if (!providerValue || !modelValue) {
+        // Only validate provider and model if not using predefined values
+        if (!usePredefined && (!providerValue || !modelValue)) {
           showToast({
             message: localize('com_agents_missing_provider_model'),
             status: 'error',
@@ -209,14 +224,18 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
           return;
         }
 
+        // Use predefined values if enabled and form values are empty
+        const finalModelValue = usePredefined && !modelValue ? agentDefaults.model : modelValue;
+        const finalProviderValue = usePredefined && !providerValue ? agentDefaults.provider : providerValue;
+
         await createMutation.mutateAsync({
           name,
           artifacts,
           description,
           instructions,
-          model: modelValue,
+          model: finalModelValue,
           tools,
-          provider: providerValue,
+          provider: finalProviderValue,
           model_parameters,
           agent_ids,
           end_after_tools,
@@ -363,76 +382,105 @@ export default function AgentCreationModal({ open, onClose, onSuccess }: AgentCr
                   <label className={labelClass} htmlFor="provider">
                     {localize('com_ui_model')} <span className="text-red-500">*</span>
                   </label>
-                  <div className="space-y-3">
-                    {/* Provider Selection */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Provider
-                      </label>
-                      <select
-                        value={providerValue || ''}
-                        onChange={(e) => {
-                          const selectedProvider = providers.find(p => p.value === e.target.value);
-                          if (selectedProvider) {
-                            handleProviderSelect(selectedProvider);
-                          }
-                        }}
-                        className={inputClass}
-                      >
-                        <option value="">Select Provider</option>
-                        {providers.map((provider) => (
-                          <option key={provider.value} value={provider.value}>
-                            {provider.label}
-                          </option>
-                        ))}
-                      </select>
-                </div>
-
-                    {/* Model Selection */}
-                    {providerValue && (
-                <div>
+                  
+                  {usePredefined ? (
+                    /* Predefined Values Display */
+                    <div className="space-y-3">
+                      <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Provider:
+                          </label>
+                          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                            {agentDefaults.providerDisplayName || agentDefaults.provider}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Model:
+                          </label>
+                          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                            {agentDefaults.modelDisplayName || agentDefaults.model}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          Provider and model are predefined and cannot be changed.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* User Selection UI */
+                    <div className="space-y-3">
+                      {/* Provider Selection */}
+                      <div>
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Model
-                  </label>
-                        <button
-                          type="button"
-                          className="btn btn-neutral border-token-border-light relative h-10 w-full rounded-lg font-medium"
-                          onClick={() => {
-                            // This would open a model selection dialog
-                            // For now, we'll use a simple input
+                          Provider
+                        </label>
+                        <select
+                          value={providerValue || ''}
+                          onChange={(e) => {
+                            const selectedProvider = providers.find(p => p.value === e.target.value);
+                            if (selectedProvider) {
+                              handleProviderSelect(selectedProvider);
+                            }
                           }}
+                          className={inputClass}
                         >
-                          <div className="flex w-full items-center gap-2">
-                            {Icon && (
-                              <div className="shadow-stroke relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white text-black dark:bg-white">
-                                <Icon
-                                  className="h-2/3 w-2/3"
-                                  endpoint={providerValue as string}
-                                  endpointType={endpointType}
-                                  iconURL={endpointIconURL}
-                                />
-                              </div>
+                          <option value="">Select Provider</option>
+                          {providers.map((provider) => (
+                            <option key={provider.value} value={provider.value}>
+                              {provider.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Model Selection */}
+                      {providerValue && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Model
+                          </label>
+                          <button
+                            type="button"
+                            className="btn btn-neutral border-token-border-light relative h-10 w-full rounded-lg font-medium"
+                            onClick={() => {
+                              // This would open a model selection dialog
+                              // For now, we'll use a simple input
+                            }}
+                          >
+                            <div className="flex w-full items-center gap-2">
+                              {Icon && (
+                                <div className="shadow-stroke relative flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white text-black dark:bg-white">
+                                  <Icon
+                                    className="h-2/3 w-2/3"
+                                    endpoint={providerValue as string}
+                                    endpointType={endpointType}
+                                    iconURL={endpointIconURL}
+                                  />
+                                </div>
+                              )}
+                              <span>{model || localize('com_ui_select_model')}</span>
+                            </div>
+                          </button>
+                          <Controller
+                            name="model"
+                            control={control}
+                            rules={{ required: true }}
+                            render={({ field }) => (
+                              <input
+                                {...field}
+                                value={field.value ?? ''}
+                                className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
+                                placeholder="Enter model name (e.g., gpt-4, claude-3)"
+                                aria-label="Model name"
+                              />
                             )}
-                            <span>{model || localize('com_ui_select_model')}</span>
-                          </div>
-                        </button>
-                  <Controller
-                    name="model"
-                    control={control}
-                    rules={{ required: true }}
-                    render={({ field }) => (
-                      <input
-                        {...field}
-                        value={field.value ?? ''}
-                              className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
-                              placeholder="Enter model name (e.g., gpt-4, claude-3)"
-                        aria-label="Model name"
-                      />
-                    )}
-                  />
-                </div>
-                    )}
-                  </div>
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Capabilities */}

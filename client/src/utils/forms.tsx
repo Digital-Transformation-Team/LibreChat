@@ -9,6 +9,7 @@ import {
 } from 'librechat-data-provider';
 import type { Agent, TFile } from 'librechat-data-provider';
 import type { DropdownValueSetter, TAgentOption, ExtendedFile } from '~/common';
+import { getAgentDefaults, shouldUsePredefinedValues } from '~/config/agentDefaults';
 
 /**
  * Creates a Dropdown value setter that always passes a string value,
@@ -47,12 +48,25 @@ export const createProviderOption = (provider: string) => ({
 /**
  * Gets default agent form values with localStorage values for model and provider.
  * This is used to initialize agent forms with the last used model and provider.
+ * If predefined values are enabled, uses those instead of localStorage values.
  **/
-export const getDefaultAgentFormValues = () => ({
-  ...defaultAgentFormValues,
-  model: localStorage.getItem(LocalStorageKeys.LAST_AGENT_MODEL) ?? '',
-  provider: createProviderOption(localStorage.getItem(LocalStorageKeys.LAST_AGENT_PROVIDER) ?? ''),
-});
+export const getDefaultAgentFormValues = () => {
+  const defaults = getAgentDefaults();
+  
+  if (shouldUsePredefinedValues()) {
+    return {
+      ...defaultAgentFormValues,
+      model: defaults.model,
+      provider: createProviderOption(defaults.provider),
+    };
+  }
+  
+  return {
+    ...defaultAgentFormValues,
+    model: localStorage.getItem(LocalStorageKeys.LAST_AGENT_MODEL) ?? '',
+    provider: createProviderOption(localStorage.getItem(LocalStorageKeys.LAST_AGENT_PROVIDER) ?? ''),
+  };
+};
 
 export const processAgentOption = ({
   agent: _agent,
