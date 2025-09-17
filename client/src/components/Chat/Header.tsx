@@ -48,10 +48,10 @@ export default function Header() {
             }`}
           >
             <OpenSidebar setNavVisible={setNavVisible} />
-            <div className="h-10 w-20 bg-cover">
+            <div className="h-10 w-40 bg-cover">
               <img
                 // ! Replace with the actual image and resize
-                src="/assets/trace.svg"
+                src="/assets/kto.svg"
                 className="h-full w-full object-contain"
                 alt={'company-logo-image'}
               />

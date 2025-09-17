@@ -63,7 +63,7 @@ function AuthLayout({
         <div className="mt-6 h-20 w-full bg-cover">
           <img
             // ! Replace with the actual image and resize
-            src="/assets/trace.svg"
+            src="/assets/kto.svg"
             className="h-full w-full object-contain"
             alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}
           />
