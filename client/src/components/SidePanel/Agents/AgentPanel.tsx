@@ -1,5 +1,4 @@
 import { Plus } from 'lucide-react';
-import FileRow from '~/components/Chat/Input/Files/FileRow';
 import React, { useMemo, useCallback, useRef } from 'react';
 import { Button, useToastContext } from '@librechat/client';
 import { useWatch, useForm, FormProvider } from 'react-hook-form';
