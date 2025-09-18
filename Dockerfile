@@ -29,11 +29,20 @@ RUN \
     npm config set fetch-retry-maxtimeout 600000 ; \
     npm config set fetch-retries 5 ; \
     npm config set fetch-retry-mintimeout 15000 ; \
-    npm install --no-audit; \
+    npm ci \
+    npm install --no-audit \
     # React client build
     NODE_OPTIONS="--max-old-space-size=2048" npm run frontend; \
-    npm prune --production; \
-    npm cache clean --force
+    # npm prune --production; \
+    npm cache clean --force \
+    # error: could not load the sharp module using the linux-x64 runtime
+    npm install sharp \
+    # cross-env not found
+    npm install cross-env
+
+RUN npm install --include=optional sharp \
+    && npm rebuild sharp --platform=linuxmusl --arch=x64
+
 
 RUN mkdir -p /app/client/public/images /app/api/logs
 
