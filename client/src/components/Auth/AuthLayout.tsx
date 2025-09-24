@@ -64,8 +64,8 @@ function AuthLayout({
           <img
             src={
               import.meta.env.VITE_APP_ENV == 'narxoz'
-                ? '/assets/kto_logo.svg'
-                : '/assets/narxoz_logo.svg'
+                ? '/assets/narxoz_logo.svg'
+                : '/assets/kto_logo.svg'
             }
             className="h-full w-full object-contain"
             alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}

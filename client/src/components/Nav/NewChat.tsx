@@ -69,8 +69,8 @@ export default function NewChat({
           <img
             src={
               import.meta.env.VITE_APP_ENV == 'narxoz'
-                ? '/assets/kto_logo.svg'
-                : '/assets/narxoz_logo.svg'
+                ? '/assets/narxoz_logo.svg'
+                : '/assets/kto_logo.svg'
             }
             className="h-full w-full object-contain"
             alt={'company-logo-image'}
