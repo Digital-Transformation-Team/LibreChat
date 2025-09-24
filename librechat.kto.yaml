@@ -68,10 +68,10 @@ interface:
 
   #     By using the Website, you acknowledge that you have read these Terms of Service and agree to be bound by them.
 
-  endpointsMenu: true
-  modelSelect: true
+  endpointsMenu: false
+  modelSelect: false
   parameters: false
-  sidePanel: true
+  sidePanel: false
   presets: false
   prompts: false
   bookmarks: false

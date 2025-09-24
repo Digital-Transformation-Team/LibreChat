@@ -62,8 +62,11 @@ function AuthLayout({
       <BlinkAnimation active={isFetching}>
         <div className="mt-6 h-20 w-full bg-cover">
           <img
-            // ! Replace with the actual image and resize
-            src="/assets/kto.svg"
+            src={
+              import.meta.env.VITE_APP_ENV == 'narxoz'
+                ? '/assets/kto_logo.svg'
+                : '/assets/narxoz_logo.svg'
+            }
             className="h-full w-full object-contain"
             alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}
           />

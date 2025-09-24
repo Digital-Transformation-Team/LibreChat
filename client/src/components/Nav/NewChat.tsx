@@ -46,7 +46,6 @@ export default function NewChat({
     },
     [queryClient, conversation, newConvo, navigate, toggleNav, isSmallScreen],
   );
-
   return (
     <>
       <div className="flex items-center justify-between py-[2px] md:py-2">
@@ -68,8 +67,11 @@ export default function NewChat({
         />
         <div className="h-10 w-40 bg-cover">
           <img
-            // ! Replace with the actual image and resize
-            src="/assets/kto.svg"
+            src={
+              import.meta.env.VITE_APP_ENV == 'narxoz'
+                ? '/assets/kto_logo.svg'
+                : '/assets/narxoz_logo.svg'
+            }
             className="h-full w-full object-contain"
             alt={'company-logo-image'}
           />
