@@ -16,11 +16,11 @@ const defaultInterface = getConfigDefaults().interface;
 
 export default function Header() {
   const { data: startupConfig } = useGetStartupConfig();
-  const { navVisible, setNavVisible } = useOutletContext<ContextType>();
   const interfaceConfig = useMemo(
     () => startupConfig?.interface ?? defaultInterface,
     [startupConfig],
   );
+  const { navVisible, setNavVisible } = useOutletContext<ContextType>();
 
   const hasAccessToBookmarks = useHasAccess({
     permissionType: PermissionTypes.BOOKMARKS,
@@ -33,7 +33,6 @@ export default function Header() {
   });
 
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
-  console.log('env', import.meta.env.VITE_APP_ENV);
   return (
     <div className="sticky top-0 z-10 flex h-14 w-full items-center justify-between bg-white p-2 font-semibold text-text-primary dark:bg-gray-800">
       <div className="hide-scrollbar flex w-full items-center justify-between gap-2 overflow-x-auto">
@@ -50,11 +49,7 @@ export default function Header() {
             <OpenSidebar setNavVisible={setNavVisible} />
             <div className="h-10 w-40 bg-cover">
               <img
-                src={
-                  import.meta.env.VITE_APP_ENV == 'narxoz'
-                    ? '/assets/narxoz_logo.svg'
-                    : '/assets/kto_logo.svg'
-                }
+                src={`/assets/${interfaceConfig.companyLogo}`}
                 className="h-full w-full object-contain"
                 alt={'company-logo-image'}
               />

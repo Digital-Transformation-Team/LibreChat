@@ -1,11 +1,13 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import type { TMessage } from 'librechat-data-provider';
-import { QueryKeys, Constants } from 'librechat-data-provider';
+import { QueryKeys, Constants, getConfigDefaults } from 'librechat-data-provider';
 import { NewChatIcon, MobileSidebar, Sidebar, TooltipAnchor, Button } from '@librechat/client';
 import { useLocalize, useNewConvo } from '~/hooks';
 import store from '~/store';
+import { useGetStartupConfig } from '~/data-provider';
+const defaultInterface = getConfigDefaults().interface;
 
 export default function NewChat({
   index = 0,
@@ -21,6 +23,11 @@ export default function NewChat({
   headerButtons?: React.ReactNode;
 }) {
   const queryClient = useQueryClient();
+  const { data: startupConfig } = useGetStartupConfig();
+  const interfaceConfig = useMemo(
+    () => startupConfig?.interface ?? defaultInterface,
+    [startupConfig],
+  );
   /** Note: this component needs an explicit index passed if using more than one */
   const { newConversation: newConvo } = useNewConvo(index);
   const navigate = useNavigate();
@@ -67,11 +74,7 @@ export default function NewChat({
         />
         <div className="h-10 w-40 bg-cover">
           <img
-            src={
-              import.meta.env.VITE_APP_ENV == 'narxoz'
-                ? '/assets/narxoz_logo.svg'
-                : '/assets/kto_logo.svg'
-            }
+            src={`/assets/${interfaceConfig.companyLogo}`}
             className="h-full w-full object-contain"
             alt={'company-logo-image'}
           />

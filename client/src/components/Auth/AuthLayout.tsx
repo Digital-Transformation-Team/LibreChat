@@ -1,11 +1,14 @@
 import { ThemeSelector } from '@librechat/client';
-import { TStartupConfig } from 'librechat-data-provider';
+import { getConfigDefaults, TStartupConfig } from 'librechat-data-provider';
 import { ErrorMessage } from '~/components/Auth/ErrorMessage';
 import { TranslationKeys, useLocalize } from '~/hooks';
 import SocialLoginRender from './SocialLoginRender';
 import { BlinkAnimation } from './BlinkAnimation';
 import { Banner } from '../Banners';
 import Footer from './Footer';
+import { useMemo } from 'react';
+
+const defaultInterface = getConfigDefaults().interface;
 
 function AuthLayout({
   children,
@@ -25,6 +28,10 @@ function AuthLayout({
   error: TranslationKeys | null;
 }) {
   const localize = useLocalize();
+  const interfaceConfig = useMemo(
+    () => startupConfig?.interface ?? defaultInterface,
+    [startupConfig],
+  );
 
   const hasStartupConfigError = startupConfigError !== null && startupConfigError !== undefined;
   const DisplayError = () => {
@@ -62,11 +69,7 @@ function AuthLayout({
       <BlinkAnimation active={isFetching}>
         <div className="mt-6 h-20 w-full bg-cover">
           <img
-            src={
-              import.meta.env.VITE_APP_ENV == 'narxoz'
-                ? '/assets/narxoz_logo.svg'
-                : '/assets/kto_logo.svg'
-            }
+            src={`/assets/${interfaceConfig.companyLogo}`}
             className="h-full w-full object-contain"
             alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'LibreChat' })}
           />

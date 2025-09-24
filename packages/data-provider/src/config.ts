@@ -501,6 +501,7 @@ export const intefaceSchema = z
       })
       .optional(),
     termsOfService: termsOfServiceSchema.optional(),
+    companyLogo: z.string().optional(),
     customWelcome: z.string().optional(),
     mcpServers: mcpServersSchema.optional(),
     endpointsMenu: z.boolean().optional(),
