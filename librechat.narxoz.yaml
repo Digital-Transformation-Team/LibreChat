@@ -12,8 +12,8 @@ cache: true
 
 # Custom interface configuration
 interface:
-  customWelcome: 'Bilik AI.Created by "ЦИР" АО "КазТрансОйл"'
-  companyLogo: 'kto_logo.svg'
+  customWelcome: 'Narxoz Librechat'
+  companyLogo: 'narxoz_logo.svg'
   # MCP Servers UI configuration
   mcpServers:
     placeholder: 'MCP Servers'
