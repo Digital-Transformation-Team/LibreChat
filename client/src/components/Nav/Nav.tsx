@@ -18,6 +18,7 @@ import NewChat from './NewChat';
 import { cn } from '~/utils';
 import store from '~/store';
 import { URLIcon } from '../Endpoints/URLIcon';
+import { useNavigate } from 'react-router-dom';
 
 const BookmarkNav = lazy(() => import('./Bookmarks/BookmarkNav'));
 const AccountSettings = lazy(() => import('./AccountSettings'));
@@ -200,7 +201,10 @@ const Nav = memo(
     const title = 'Agents Dashboard';
 
     const isAgentsDashboardActive = window.location.pathname === '/agents/dashboards';
-    const handleNavigation = () => {
+    
+    const navigate = useNavigate();
+
+    const handleNavigation = useCallback(() => {
       const baseUrl = window.location.origin;
       const path = '/agents/dashboards';
 
@@ -209,8 +213,8 @@ const Nav = memo(
       }
 
       itemToggleNav();
-      window.open(baseUrl + path, '_self');
-    };
+      navigate(path);
+    }, [itemToggleNav, navigate]);
 
     const hasAccessToAgents = useHasAccess({
       permissionType: PermissionTypes.AGENTS,

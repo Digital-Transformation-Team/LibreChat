@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import React, { useMemo, useCallback, useRef } from 'react';
+import React, { useMemo, useCallback, useRef, useEffect } from 'react';
 import { Button, useToastContext } from '@librechat/client';
 import { useWatch, useForm, FormProvider } from 'react-hook-form';
 import { useGetModelsQuery } from 'librechat-data-provider/react-query';
@@ -31,7 +31,13 @@ import AgentFooter from './AgentFooter';
 import ModelPanel from './ModelPanel';
 import { Panel } from '~/common';
 
-export default function AgentPanel() {
+interface AgentPanelProps {
+  selectedAgentId?: string | null;
+  showSelection?: boolean | true;
+  onSuccess?: () => void;
+}
+
+export default function AgentPanel({ selectedAgentId, showSelection = true, onSuccess }: AgentPanelProps) {
   const localize = useLocalize();
   const { user } = useAuthContext();
   const { showToast } = useToastContext();
@@ -43,6 +49,12 @@ export default function AgentPanel() {
     setCurrentAgentId,
     agent_id: current_agent_id,
   } = useAgentPanelContext();
+
+  useEffect(() => {
+    if (selectedAgentId) {
+      setCurrentAgentId(selectedAgentId);
+    }
+  }, [selectedAgentId]);
 
   const { onSelect: onSelectAgent } = useSelectAgent();
 
@@ -141,6 +153,7 @@ export default function AgentPanel() {
       }
       // Clear the ref after use
       previousVersionRef.current = undefined;
+      onSuccess?.();
     },
     onError: (err) => {
       const error = err as Error;
@@ -161,6 +174,7 @@ export default function AgentPanel() {
           data.name ?? localize('com_ui_agent')
         }`,
       });
+      onSuccess?.();
     },
     onError: (err) => {
       const error = err as Error;
@@ -280,7 +294,7 @@ export default function AgentPanel() {
         aria-label="Agent configuration form"
       >
         <div className="mt-2 flex w-full flex-wrap gap-2">
-          <div className="w-full">
+          <div className={`w-full ${showSelection ? '' : 'hidden'}`}>
             <AgentSelect
               createMutation={create}
               agentQuery={agentQuery}
@@ -291,7 +305,7 @@ export default function AgentPanel() {
             />
           </div>
           {/* Create + Select Button */}
-          {agent_id && hasAccessToAgents && (
+          {agent_id && hasAccessToAgents && showSelection && (
             <div className="flex w-full gap-2">
               <Button
                 type="button"
