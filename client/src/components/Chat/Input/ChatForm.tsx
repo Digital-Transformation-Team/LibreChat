@@ -33,6 +33,7 @@ import EditBadges from './EditBadges';
 import BadgeRow from './BadgeRow';
 import Mention from './Mention';
 import store from '~/store';
+import { riveInputState, riveThinkingState } from '~/store/rive-inputs';
 
 const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -131,6 +132,8 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
 
   const { submitMessage, submitPrompt } = useSubmitMessage();
 
+  const [riveInput, setRiveInput] = useRecoilState(riveInputState);
+
   const handleKeyUp = useHandleKeyUp({
     index,
     textAreaRef,
@@ -160,6 +163,21 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
       [methods],
     ),
   });
+
+  const [, setThinking] = useRecoilState(riveThinkingState);
+
+  const onSubmit = methods.handleSubmit(async (data) => {
+    setThinking(true);
+    setRiveInput('');
+
+    await submitMessage(data);
+  });
+
+  useEffect(() => {
+    if (!isSubmitting && !isSubmittingAdded) {
+      setThinking(false);
+    }
+  }, [isSubmitting, isSubmittingAdded, setThinking]);
 
   const textValue = useWatch({ control: methods.control, name: 'text' });
 
@@ -204,7 +222,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
 
   return (
     <form
-      onSubmit={methods.handleSubmit(submitMessage)}
+      onSubmit={onSubmit}
       className={cn(
         'mx-auto flex w-full flex-row gap-3 transition-[max-width] duration-300 sm:px-2',
         maximizeChatSpace ? 'max-w-full' : 'md:max-w-3xl xl:max-w-4xl',
@@ -278,6 +296,11 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                   }}
                   onBlur={setIsTextAreaFocused.bind(null, false)}
                   onClick={handleFocusOrClick}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRiveInput(value);
+                    methods.setValue('text', value);
+                  }}
                   style={{ height: 44, overflowY: 'auto' }}
                   className={cn(
                     baseClasses,
